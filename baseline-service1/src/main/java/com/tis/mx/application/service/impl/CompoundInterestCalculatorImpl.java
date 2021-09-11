@@ -7,8 +7,8 @@
  * General Public License for more details.
  *
  * Nombre de archivo: CompoundInterestCalculatorImpl.java 
- * Autor: johanama 
- * Fecha de creación: 9 sep 2021
+ * Autor: johanama
+ *  Fecha de creación: 9 sep 2021
  */
 package com.tis.mx.application.service.impl;
 
@@ -32,25 +32,34 @@ public class CompoundInterestCalculatorImpl implements CompoundInterestCalculato
    */
   @Override
   public List<InvestmentYieldDto> createRevenueGrid(InitialInvestmentDto initialInvestmentDto) {
-    Double aux = 0.00;
+    Double auxiliar = 0.00;
     Integer investmentYear = 0;
     Double initialInvestment = 0.00;
     Double yearlyInput = 0.00;
     Double investmentYield = 0.00;
     Double finalBalance = 0.00;
-    Integer yearlyInputIncrement = 0;
+
+    ArrayList<InvestmentYieldDto> investmentYieldList = new ArrayList<>();
 
     for (int i = 0; i < initialInvestmentDto.getInvestmentYears(); i++) {
       investmentYear = i + 1;
-      yearlyInput = initialInvestmentDto.getYearlyInput() + aux;
-      aux += yearlyInput * initialInvestmentDto.getYearlyInputIncrement() / 100;
+      yearlyInput = initialInvestmentDto.getYearlyInput() + auxiliar;
+      auxiliar += yearlyInput * initialInvestmentDto.getYearlyInputIncrement() / 100;
+      auxiliar = Math.ceil(auxiliar);
+
+      if (i == 0) {
+        initialInvestment = initialInvestmentDto.getInitialInvestment();
+      } else if (i > 0) {
+        initialInvestment = finalBalance;
+      }
 
       investmentYield =
           (initialInvestment + yearlyInput) * initialInvestmentDto.getInvestmentYield();
       finalBalance = initialInvestment + yearlyInput + investmentYield;
-
+      investmentYieldList.add(new InvestmentYieldDto(investmentYear, initialInvestment, yearlyInput,
+          investmentYield, finalBalance));
     }
-    return investmentYield;
+    return investmentYieldList;
   }
 
   @Override
