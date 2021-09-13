@@ -1,85 +1,143 @@
-/*
- * This program is free software: you can redistribute it and/or modify it under the terms of the
- * GNU General Public License as published by the Free Software Foundation, version 3.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
- * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * Nombre de archivo: CompoundInterestCalculatorImpl.java 
- * Autor: johanama
- *  Fecha de creación: 9 sep 2021
- */
+/* 
+* This program is free software: you can redistribute it and/or modify  
+* it under the terms of the GNU General Public License as published by  
+* the Free Software Foundation, version 3.
+*
+* This program is distributed in the hope that it will be useful, but 
+* WITHOUT ANY WARRANTY; without even the implied warranty of 
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+* General Public License for more details.
+*
+* Nombre de archivo: CompoundInterestCalculatorImpl.java
+* Autor: johanama
+* Fecha de creación: 10 sep 2021
+*/
+
+
 package com.tis.mx.application.service.impl;
 
 import com.tis.mx.application.dto.InitialInvestmentDto;
 import com.tis.mx.application.dto.InvestmentYieldDto;
 import com.tis.mx.application.service.CompoundInterestCalculator;
+import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Optional;
 
 
+/**
+ * The Class CompoundInterestCalculatorImpl.
+ */
+@Service
 public class CompoundInterestCalculatorImpl implements CompoundInterestCalculator {
 
   /**
    * Creates the revenue grid.
    *
-   * @param initialInvestmentDto the initial investment dto
+   * @param initialInvestment the initial investment
    * @return the list
    */
   @Override
-  public List<InvestmentYieldDto> createRevenueGrid(InitialInvestmentDto initialInvestmentDto) {
-    Double auxiliar = 0.00;
-    Integer investmentYear = 0;
-    Double initialInvestment = 0.00;
-    Double yearlyInput = 0.00;
-    Double investmentYield = 0.00;
-    Double finalBalance = 0.00;
+  public List<InvestmentYieldDto> createRevenueGrid(InitialInvestmentDto initialInvestment) {
 
-    ArrayList<InvestmentYieldDto> investmentYieldList = new ArrayList<>();
+    List<InvestmentYieldDto> tablaDeRendimiento = new ArrayList<>();
 
-    for (int i = 0; i < initialInvestmentDto.getInvestmentYears(); i++) {
-      investmentYear = i + 1;
-      yearlyInput = initialInvestmentDto.getYearlyInput() + auxiliar;
-      auxiliar += yearlyInput * initialInvestmentDto.getYearlyInputIncrement() / 100;
-      auxiliar = Math.ceil(auxiliar);
+    int ciclosDeInversion = initialInvestment.getInvestmentYears();
 
-      if (i == 0) {
-        initialInvestment = initialInvestmentDto.getInitialInvestment();
-      } else if (i > 0) {
-        initialInvestment = finalBalance;
+    for (int ciclo = 0; ciclo < ciclosDeInversion; ciclo++) {
+
+      InvestmentYieldDto rendimientoAnual = null;
+
+      if (ciclo == 0) {
+        rendimientoAnual = this.calcularRendimientoAnual(initialInvestment, null);
+      } else {
+
+        rendimientoAnual =
+            this.calcularRendimientoAnual(initialInvestment, tablaDeRendimiento.get(ciclo - 1));
       }
 
-      investmentYield =
-          (initialInvestment + yearlyInput) * initialInvestmentDto.getInvestmentYield();
-      finalBalance = initialInvestment + yearlyInput + investmentYield;
-      investmentYieldList.add(new InvestmentYieldDto(investmentYear, initialInvestment, yearlyInput,
-          investmentYield, finalBalance));
+      tablaDeRendimiento.add(rendimientoAnual);
     }
-    return investmentYieldList;
+
+
+    return tablaDeRendimiento;
   }
 
+
+  /**
+   * Calcular rendimiento anual.
+   *
+   * @param inversionInicial the inversion inicial
+   * @param rendimientoAnterior the rendimiento anterior
+   * @return the investment yield dto
+   */
+  private InvestmentYieldDto calcularRendimientoAnual(InitialInvestmentDto inversionInicial,
+      InvestmentYieldDto rendimientoAnterior) {
+
+    InvestmentYieldDto rendimiento = new InvestmentYieldDto();
+
+    if (rendimientoAnterior == null) {
+      /**
+       * Aqui no existe rendimiento anterior
+       */
+      rendimiento.setInvestmentYear(1);
+      rendimiento.setInitialInvestment(inversionInicial.getInitialInvestment());
+      rendimiento.setYearlyInput(inversionInicial.getYearlyInput());
+    } else {
+      /**
+       * Aqui si hay un rendimiento anterior
+       */
+      rendimiento.setInvestmentYear(rendimientoAnterior.getInvestmentYear() + 1);
+      rendimiento.setInitialInvestment(rendimientoAnterior.getFinalBalance());
+
+      Float aportacion = rendimientoAnterior.getYearlyInput()
+          * (1 + (inversionInicial.getYearlyInputIncrement() / 100));
+      rendimiento.setYearlyInput(aportacion);
+    }
+
+    Float rendimientoAnual = rendimiento.getInitialInvestment() + rendimiento.getYearlyInput();
+    rendimientoAnual = rendimientoAnual * (inversionInicial.getInvestmentYield() / 100);
+
+    rendimiento.setInvestmentYield(rendimientoAnual);
+
+
+    Float saldoFinal = rendimiento.getInitialInvestment() + rendimiento.getYearlyInput()
+        + rendimiento.getInvestmentYield();
+
+    rendimiento.setFinalBalance(saldoFinal);
+
+    return rendimiento;
+  }
+
+  /**
+   * Validate input.
+   *
+   * @param initialInvestment the initial investment
+   * @return true, if successful
+   */
   @Override
   public boolean validateInput(InitialInvestmentDto initialInvestment) {
 
-    this.setValues(initialInvestment);
-    boolean validation = true;
+    this.setDefaults(initialInvestment);
+    boolean cumple = true;
 
-    validation = validation && (initialInvestment.getInitialInvestment() >= 1000);
-    validation = validation && (initialInvestment.getYearlyInput() >= 0.0);
-    validation = validation && (initialInvestment.getYearlyInputIncrement() >= 0);
-    validation = validation && (initialInvestment.getInvestmentYears() > 0.0);
-    validation = validation && (initialInvestment.getInvestmentYield() > 0.0);
+    cumple = (initialInvestment.getInitialInvestment() >= 1000);
+    cumple = cumple && (initialInvestment.getYearlyInput() >= 0.0);
+    cumple = cumple && (initialInvestment.getYearlyInputIncrement() >= 0);
+    cumple = cumple && (initialInvestment.getInvestmentYears() > 0.0);
+    cumple = cumple && (initialInvestment.getInvestmentYield() > 0.0);
 
-    return validation;
+    return cumple;
   }
 
-  private void setValues(InitialInvestmentDto initialInvestment) {
-    Double yearlyInput = initialInvestment.getYearlyInput();
-    yearlyInput = yearlyInput == null ? 0.0 : yearlyInput;
+  /**
+   * Sets the defaults.
+   *
+   * @param initialInvestment the new defaults
+   */
+  private void setDefaults(InitialInvestmentDto initialInvestment) {
+    Float yearlyInput = initialInvestment.getYearlyInput();
+    yearlyInput = yearlyInput == null ? 0 : yearlyInput;
     initialInvestment.setYearlyInput(yearlyInput);
 
     Integer yearlyInputIncrement = initialInvestment.getYearlyInputIncrement();

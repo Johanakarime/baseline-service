@@ -13,9 +13,12 @@
 * Fecha de creación: 9 sep 2021
 */
 
-
 package com.tis.mx.application.controller;
 
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
 import com.tis.mx.application.dto.InitialInvestmentDto;
 import com.tis.mx.application.dto.InvestmentYieldDto;
 import com.tis.mx.application.service.CompoundInterestCalculator;
@@ -24,6 +27,7 @@ import java.util.List;
 /**
  * The Class ApplicationController.
  */
+@RestController
 public class ApplicationController {
 
   /** The calculator. */
@@ -41,11 +45,21 @@ public class ApplicationController {
   /**
    * Creates the table yield.
    *
+   * @param contentType the content type
    * @param initialInvestment the initial investment
    * @return the list
    */
-  public List<InvestmentYieldDto> createTableYield(InitialInvestmentDto initialInvestment) {
+  @PostMapping(value = "/api/v1/investors/calculators/ci")
+  public List<InvestmentYieldDto> createTableYield(
+      @RequestHeader(value = "Content-Type", required = false) String contentType,
+      @RequestBody InitialInvestmentDto initialInvestment) {
 
-    return calculator.createRevenueGrid(initialInvestment);
+    if (calculator.validateInput(initialInvestment)) {
+      return calculator.createRevenueGrid(initialInvestment);
+    }
+
+    throw new CalculatorInputException("El cálculo no puede ser ejecutado");
   }
 }
+
+
