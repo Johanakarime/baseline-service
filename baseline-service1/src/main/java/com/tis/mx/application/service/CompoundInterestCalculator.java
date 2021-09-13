@@ -27,7 +27,7 @@ import java.util.List;
  * The Interface CompoundInterestCalculator.
  */
 public interface CompoundInterestCalculator {
-
+  
   /**
    * Creates the revenue grid.
    *
