@@ -1,10 +1,10 @@
 Manifest-Version: 1.0
 Built-By: johanama
 Build-Jdk: 11.0.12
-Implementation-Title: baseline-service
+Implementation-Title: baseline-service-sgn
 Implementation-Version: 1.0.0
 Implementation-Vendor-Id: practicas-cloud
 Implementation-URL: https://projects.spring.io/spring-boot/#/spring-boot
- -starter-parent/baseline-service
+ -starter-parent/baseline-service-sgn
 Created-By: Maven Integration for Eclipse
 
